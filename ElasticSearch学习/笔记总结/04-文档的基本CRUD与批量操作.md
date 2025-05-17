@@ -352,8 +352,252 @@ POST _bulk
 }
 ```
 
+### 1.3、批量读取 - mget
 
+> 批量操作，可以减少网络连接所产生的开销，提高性能
+
+```shell
+# 批量读取
+GET _mget
+{
+  "docs":[
+    {
+      "_index": "movies",
+      "_id": 153
+    },
+    {
+      "_index": "my_index",
+      "_id": 2
+    }
+  ]
+}
+```
+
+返回
+
+```json
+{
+  "docs": [
+    {
+      "_index": "movies",
+      "_id": "153",
+      "_version": 1,
+      "_seq_no": 69,
+      "_primary_term": 1,
+      "found": true,
+      "_source": {
+        "id": "153",
+        "year": 1995,
+        "log": {
+          "file": {
+            "path": "/Users/zhangchenglong06/personal/geektime/geektime-ELK/part-1/2.4-Logstash安装与导入数据/movielens/ml-latest-small/movies.csv"
+          }
+        },
+        "title": "Batman Forever",
+        "@version": "1",
+        "event": {
+          "original": """153,Batman Forever (1995),Action|Adventure|Comedy|Crime
+"""
+        },
+        "genre": [
+          "Action",
+          "Adventure",
+          "Comedy",
+          "Crime"
+        ]
+      }
+    },
+    {
+      "_index": "my_index",
+      "_id": "2",
+      "_version": 1,
+      "_seq_no": 2,
+      "_primary_term": 1,
+      "found": true,
+      "_source": {
+        "username": "markus zhang",
+        "age": 26,
+        "motto": "No step, no mile."
+      }
+    }
+  ]
+}
+```
+
+### 1.4、批量查询 - msearch
+
+```shell
+# 批量查询
+POST movies/_msearch
+{}
+{
+  "query": {
+    "match_all": {}
+  },
+  "from": 0,
+  "size": 2
+}
+{
+  "index": "my_index"
+}
+{
+  "query": {
+    "match_all": {}
+  }
+}
+```
+
+返回
+
+```json
+{
+  "took": 4,
+  "responses": [
+    {
+      "took": 2,
+      "timed_out": false,
+      "_shards": {
+        "total": 1,
+        "successful": 1,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 9743,
+          "relation": "eq"
+        },
+        "max_score": 1,
+        "hits": [
+          {
+            "_index": "movies",
+            "_id": "153",
+            "_score": 1,
+            "_source": {
+              "id": "153",
+              "year": 1995,
+              "log": {
+                "file": {
+                  "path": "/Users/zhangchenglong06/personal/geektime/geektime-ELK/part-1/2.4-Logstash安装与导入数据/movielens/ml-latest-small/movies.csv"
+                }
+              },
+              "title": "Batman Forever",
+              "@version": "1",
+              "event": {
+                "original": """153,Batman Forever (1995),Action|Adventure|Comedy|Crime
+"""
+              },
+              "genre": [
+                "Action",
+                "Adventure",
+                "Comedy",
+                "Crime"
+              ]
+            }
+          },
+          {
+            "_index": "movies",
+            "_id": "4",
+            "_score": 1,
+            "_source": {
+              "id": "4",
+              "year": 1995,
+              "log": {
+                "file": {
+                  "path": "/Users/zhangchenglong06/personal/geektime/geektime-ELK/part-1/2.4-Logstash安装与导入数据/movielens/ml-latest-small/movies.csv"
+                }
+              },
+              "title": "Waiting to Exhale",
+              "@version": "1",
+              "event": {
+                "original": """4,Waiting to Exhale (1995),Comedy|Drama|Romance
+"""
+              },
+              "genre": [
+                "Comedy",
+                "Drama",
+                "Romance"
+              ]
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    {
+      "took": 3,
+      "timed_out": false,
+      "_shards": {
+        "total": 1,
+        "successful": 1,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 4,
+          "relation": "eq"
+        },
+        "max_score": 1,
+        "hits": [
+          {
+            "_index": "my_index",
+            "_id": "RAPKmpYBFfcCOwm5TdlD",
+            "_score": 1,
+            "_source": {
+              "username": "markuszhang",
+              "age": 26,
+              "motto": "No step, no mile."
+            }
+          },
+          {
+            "_index": "my_index",
+            "_id": "2",
+            "_score": 1,
+            "_source": {
+              "username": "markus zhang",
+              "age": 26,
+              "motto": "No step, no mile."
+            }
+          },
+          {
+            "_index": "my_index",
+            "_id": "RQPQmpYBFfcCOwm56tkz",
+            "_score": 1,
+            "_source": {
+              "username": "markuszhang",
+              "age": 26,
+              "motto": "No step, no mile."
+            }
+          },
+          {
+            "_index": "my_index",
+            "_id": "1",
+            "_score": 1,
+            "_source": {
+              "username": "markuszhang1",
+              "age": 26,
+              "motto": "No step, no mile."
+            }
+          }
+        ]
+      },
+      "status": 200
+    }
+  ]
+}
+```
+
+### 1.5、常见的错误返回
+
+![image-20250511213859903](img/image-20250511213859903.png)
 
 ## 二、Java API
 
 ## 三、本文总结
+
+- 基本的文档 CRUD 操作
+- 每个文档都有一个版本号，可用于并发控制避免冲突
+- _mget 和 bulk API 可以减少建立网络连接所产生的开销
+- bulk API 每行需要指定 index 信息，也可以在 URI 中指定。7开始，不需要指定 Type
+- 单次批量操作，数据两不宜过大，以免引发性能问题
